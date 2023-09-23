@@ -5,43 +5,39 @@
 #include <unistd.h>
 #include <math.h>
 
-int N = 100000000;
-int NUM_TASKS = 8;
-int equal_work = N / NUM_TASKS;
-
-
-// Summation function
-int workLoad() {
-    int sum = 0;
-    int task_done=0;
-    for (int i = 1; i <= equal_work; i++) {
-        if(task_done<=NUM_TASKS){
-            sum += i*(task_done*equal_work);
-            task_done +=1;
-        }
-    }
-    return sum;
-}
-
 
 int main() {
     //Starting clock
     clock_t start, end;
     double execution_time;
     start = clock();
-    
+
+    int N = 100000000;
+    int NUM_TASKS = 8;
+    int equal_work=N/NUM_TASKS;
+    int sum = 0;
+    int task_done=0;
+    sem_t mutex;
+
     //Do Work
     for(int i=0; i<=log2(NUM_TASKS);i++){
         fork();
+        for (int i = 1; i <= equal_work; i++) {
+            if(task_done<=NUM_TASKS){
+                sem_wait(&mutex);
+                sum += i*(task_done*equal_work);
+                task_done +=1;
+                sem_post(&mutex);
+            }
+        }
     }
-    int work = workLoad();
 
     //End Clock
     end = clock();
     execution_time = ((double)(end - start))/CLOCKS_PER_SEC;
 
     //Inform user
-    printf("Sum from 1 to [%d] is: [%d]\n", N, work);
+    printf("Sum from 1 to [%d] is: [%d]\n", N, sum);
     printf("Time taken to execute in seconds : [%f]", execution_time);
     
     return 0;
